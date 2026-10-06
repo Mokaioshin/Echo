@@ -168,6 +168,49 @@ async function connectSpotify() {
   return callbackPromise;
 }
 
+async function getCurrentTrack() {
+  if (!accessToken) {
+    throw new Error("Spotify n'est pas connecté.");
+  }
+}
+
+ const response = await fetch(
+    "https://api.spotify.com/v1/me/player/currently-playing",
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+  if (response.status === 204) {
+    return null;
+  }
+   if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Spotify API error: ${error}`);
+  }
+
+  const data = await response.json();
+
+  if (!data.item) {
+    return null;
+  }
+
+  return {
+    title: data.item.name,
+
+    artist: data.item.artists
+      .map((artist) => artist.name)
+      .join(", "),
+
+    album: data.item.album.name,
+
+    cover: data.item.album.images[0]?.url ?? null,
+
+    isPlaying: data.is_playing,
+  };
+
 module.exports = {
   connectSpotify,
+  getCurrentTrack,
 };

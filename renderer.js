@@ -1,19 +1,56 @@
-console.log("renderer.js chargé");
-
 const spotifyButton = document.getElementById("spotify-connect");
 
-console.log("Bouton trouvé :", spotifyButton);
+const nowPlaying = document.getElementById("now-playing");
+
+const albumCover = document.getElementById("album-cover");
+
+const trackTitle = document.getElementById("track-title");
+
+const trackArtist = document.getElementById("track-artist");
+
+
+async function updateCurrentTrack() {
+  try {
+    const track = await window.echo.getCurrentTrack();
+
+    if (!track) {
+      nowPlaying.classList.add("hidden");
+      return;
+    }
+
+    trackTitle.textContent = track.title;
+    trackArtist.textContent = track.artist;
+
+    if (track.cover) {
+      albumCover.src = track.cover;
+    }
+
+    nowPlaying.classList.remove("hidden");
+
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération du morceau en cours :",
+      error
+    );
+  }
+}
+
 
 spotifyButton.addEventListener("click", async () => {
-  console.log("CLIC SPOTIFY");
-
   try {
-    console.log("window.echo =", window.echo);
-
     await window.echo.connectSpotify();
 
-    console.log("IPC envoyé");
+    spotifyButton.classList.add("hidden");
+
+    await updateCurrentTrack();
+
+    
+    setInterval(updateCurrentTrack, 5000); // Actualisation toutes les 5 secondes
+
   } catch (error) {
-    console.error("ERREUR :", error);
+    console.error(
+      "Erreur lors de la connexion à Spotify :",
+      error
+    );
   }
 });

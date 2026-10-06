@@ -3,7 +3,10 @@ require("dotenv").config();
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 
-const { connectSpotify } = require("./spotify");
+const {
+  connectSpotify,
+  getCurrentTrack,
+} = require("./spotify");
 
 function createWindow() {
   const window = new BrowserWindow({
@@ -34,6 +37,10 @@ ipcMain.handle("spotify:connect", async () => {
   console.log(" Spotify connecté à ECHO");
 
   return true;
+});
+
+ipcMain.handle("spotify:current-track", async () => {
+  return await getCurrentTrack();
 });
 
 app.whenReady().then(() => {
