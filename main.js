@@ -22,6 +22,7 @@ function createWindow() {
   });
 
   window.loadFile("index.html");
+  window.webContents.openDevTools();
 }
 
 
@@ -29,6 +30,10 @@ ipcMain.handle("spotify:connect", async () => {
   console.log("Connexion Spotify demandée");
 
   await connectSpotify();
+
+  console.log(" Spotify connecté à ECHO");
+
+  return true;
 });
 
 app.whenReady().then(() => {
