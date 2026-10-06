@@ -8,6 +8,9 @@ const REDIRECT_URI = "http://127.0.0.1:8888/callback";
 let codeVerifier = null;
 let accessToken = null;
 
+
+
+
 function base64UrlEncode(buffer) {
   return buffer
     .toString("base64")
@@ -28,6 +31,9 @@ function generateCodeChallenge(verifier) {
       .digest()
   );
 }
+
+
+
 
 async function exchangeCodeForToken(code) {
   const body = new URLSearchParams({
@@ -53,22 +59,32 @@ async function exchangeCodeForToken(code) {
 
   if (!response.ok) {
     const error = await response.text();
-    throw new Error(`Spotify token error: ${error}`);
+
+    throw new Error(
+      `Spotify token error: ${error}`
+    );
   }
 
   const data = await response.json();
 
   accessToken = data.access_token;
 
-  console.log("acces token recuperé");
+  console.log(" Access token récupéré");
 
   return accessToken;
 }
 
+
+
 function waitForSpotifyCallback() {
   return new Promise((resolve, reject) => {
+
     const server = http.createServer(async (req, res) => {
-      const url = new URL(req.url, "http://127.0.0.1:8888");
+
+      const url = new URL(
+        req.url,
+        "http://127.0.0.1:8888"
+      );
 
       if (url.pathname !== "/callback") {
         return;
@@ -79,8 +95,11 @@ function waitForSpotifyCallback() {
 
       if (error) {
         res.end("Spotify connection cancelled.");
+
         server.close();
+
         reject(new Error(error));
+
         return;
       }
 
@@ -98,6 +117,7 @@ function waitForSpotifyCallback() {
 
         res.end(`
           <html>
+
             <body style="
               background:#0d0d0d;
               color:white;
@@ -107,12 +127,23 @@ function waitForSpotifyCallback() {
               justify-content:center;
               height:100vh;
             ">
+
               <div style="text-align:center">
+
                 <h1>ECHO</h1>
-                <p>Spotify connected successfully.</p>
-                <p>You can close this window.</p>
+
+                <p>
+                  Spotify connected successfully.
+                </p>
+
+                <p>
+                  You can close this window.
+                </p>
+
               </div>
+
             </body>
+
           </html>
         `);
 
@@ -120,61 +151,94 @@ function waitForSpotifyCallback() {
 
         resolve(accessToken);
 
-      } catch (err) {
-        console.error(err);
+      } catch (error) {
+
+        console.error(error);
 
         res.statusCode = 500;
-        res.end("Spotify authentication failed.");
+
+        res.end(
+          "Spotify authentication failed."
+        );
 
         server.close();
-        reject(err);
+
+        reject(error);
       }
     });
 
+
     server.on("error", reject);
 
-    server.listen(8888, "127.0.0.1", () => {
-      console.log("ECHO écoute Spotify sur le port 8888");
-    });
+
+    server.listen(
+      8888,
+      "127.0.0.1",
+      () => {
+        console.log(
+          "ECHO écoute Spotify sur le port 8888"
+        );
+      }
+    );
+
   });
 }
 
+
+
+
 async function connectSpotify() {
+
   codeVerifier = generateCodeVerifier();
 
   const codeChallenge =
     generateCodeChallenge(codeVerifier);
 
-  // IMPORTANT : on démarre le serveur AVANT d'ouvrir Spotify.
-  const callbackPromise = waitForSpotifyCallback();
+
+  const callbackPromise =
+    waitForSpotifyCallback();
+
 
   const params = new URLSearchParams({
+
     client_id: CLIENT_ID,
+
     response_type: "code",
+
     redirect_uri: REDIRECT_URI,
 
     code_challenge_method: "S256",
+
     code_challenge: codeChallenge,
 
     scope:
       "user-read-currently-playing user-read-playback-state",
+
   });
+
 
   const authUrl =
     `https://accounts.spotify.com/authorize?${params.toString()}`;
 
+
   await shell.openExternal(authUrl);
+
 
   return callbackPromise;
 }
 
-async function getCurrentTrack() {
-  if (!accessToken) {
-    throw new Error("Spotify n'est pas connecté.");
-  }
-}
 
- const response = await fetch(
+
+async function getCurrentTrack() {
+
+  if (!accessToken) {
+    throw new Error(
+      "Spotify n'est pas connecté."
+    );
+  }
+
+
+  const response = await fetch(
     "https://api.spotify.com/v1/me/player/currently-playing",
     {
       headers: {
@@ -182,21 +246,33 @@ async function getCurrentTrack() {
       },
     }
   );
+
+
   if (response.status === 204) {
     return null;
   }
-   if (!response.ok) {
+
+
+  if (!response.ok) {
+
     const error = await response.text();
-    throw new Error(`Spotify API error: ${error}`);
+
+    throw new Error(
+      `Spotify API error: ${error}`
+    );
   }
 
+
   const data = await response.json();
+
 
   if (!data.item) {
     return null;
   }
 
+
   return {
+
     title: data.item.name,
 
     artist: data.item.artists
@@ -205,10 +281,15 @@ async function getCurrentTrack() {
 
     album: data.item.album.name,
 
-    cover: data.item.album.images[0]?.url ?? null,
+    cover:
+      data.item.album.images[0]?.url ?? null,
 
     isPlaying: data.is_playing,
+
   };
+}
+
+
 
 module.exports = {
   connectSpotify,
